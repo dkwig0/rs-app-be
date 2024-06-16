@@ -1,0 +1,64 @@
+openapi: "3.0.0"
+info:
+  title: My store API
+  description: .
+  version: 1.0.0
+servers:
+  - url: https://fgx3ytjw71.execute-api.eu-west-1.amazonaws.com
+paths:
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Returns a list of products.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        default:
+          description: Unexpected Error.
+
+  /products/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Finds product by ID.
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+          description: Product's ID.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        500:
+          description: More than one item found.
+        404:
+          description: Not Found.
+        default:
+          description: Unexpected Error.
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        title:
+          type: string
+        price:
+          type: integer
