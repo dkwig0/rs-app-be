@@ -1,26 +1,23 @@
 package com.myorg.lambdas;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.myorg.core.entity.Mocks;
+import com.google.gson.Gson;
 import com.myorg.core.entity.Product;
+import com.myorg.core.service.ProductService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,52 +30,46 @@ public class ProductByIdLambdaUnitTest {
     private ProductByIdLambda productByIdLambda;
 
     @Mock
+    private ProductService productService;
+
+    @Mock
     private APIGatewayProxyRequestEvent request;
 
-    private final ObjectReader objectReader = new ObjectMapper().reader();
+    @Mock
+    private Context context;
+
+    @Mock
+    private LambdaLogger logger;
+
+    private Gson gson = new Gson();
 
     @Before
     public void setUp() {
-        Mocks.MOCK_PRODUCTS = List.of(
-                new Product("1", "p1", "p1", 1),
-                new Product("2", "p2", "p2", 2),
-                new Product("3", "p3", "p3", 3));
 
         when(request.getPathParameters()).thenReturn(Map.of("productId", "1"));
+        when(productService.getProductById("1")).thenReturn(
+                new Product("1", "p1", "p1", "p1", 1));
+
+        when(context.getLogger()).thenReturn(logger);
     }
 
     @Test
     public void testHandleRequest200() throws JsonProcessingException {
-        APIGatewayProxyResponseEvent result = productByIdLambda.handleRequest(request, null);
+        APIGatewayProxyResponseEvent result = productByIdLambda.handleRequest(request, context);
 
-        JsonNode jsonNode = objectReader.readTree(result.getBody());
+        Product product = gson.fromJson(result.getBody(), Product.class);
 
-        Assert.assertEquals("1", jsonNode.get("id").asText());
-        Assert.assertEquals("p1", jsonNode.get("name").asText());
-        Assert.assertEquals("p1", jsonNode.get("title").asText());
-        Assert.assertEquals(1, jsonNode.get("price").asInt());
-    }
-
-    @Test
-    public void testHandleRequest400MoreThanOne() {
-        Mocks.MOCK_PRODUCTS = List.of(
-                new Product("1", "p1", "p1", 1),
-                new Product("2", "p2", "p2", 2),
-                new Product("1", "p3", "p3", 3));
-
-        APIGatewayProxyResponseEvent result = productByIdLambda.handleRequest(request, null);
-
-        Assert.assertEquals(500, result.getStatusCode().longValue());
+        Assert.assertEquals("1", product.getId());
+        Assert.assertEquals("p1", product.getName());
+        Assert.assertEquals("p1", product.getTitle());
+        Assert.assertEquals(1, product.getPrice().intValue());
     }
 
     @Test
     public void testHandleRequest400NoneFound() {
-        Mocks.MOCK_PRODUCTS = List.of(
-                new Product("4", "p1", "p1", 1),
-                new Product("2", "p2", "p2", 2),
-                new Product("3", "p3", "p3", 3));
+        when(productService.getProductById("1")).thenReturn(null);
 
-        APIGatewayProxyResponseEvent result = productByIdLambda.handleRequest(request, null);
+        APIGatewayProxyResponseEvent result = productByIdLambda.handleRequest(request, context);
 
         Assert.assertEquals(404, result.getStatusCode().longValue());
     }

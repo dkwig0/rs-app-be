@@ -42,12 +42,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Product'
-        500:
-          description: More than one item found.
         404:
           description: Not Found.
         default:
           description: Unexpected Error.
+
+/products:
+  post:
+    tags:
+      - Products
+    summary: Returns a newly created product.
+    responses:
+      200:
+        description: OK
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Product'
+      400:
+        description: Wrong product format.
+      500:
+        description: Error creating product.
+      default:
+        description: Unexpected Error.
 
 components:
   schemas:
@@ -60,5 +79,9 @@ components:
           type: string
         title:
           type: string
+        description:
+          type: string
         price:
+          type: integer
+        count:
           type: integer
