@@ -1,7 +1,6 @@
 openapi: "3.0.0"
 info:
   title: My store API
-  description: .
   version: 1.0.0
 servers:
   - url: https://fgx3ytjw71.execute-api.eu-west-1.amazonaws.com
@@ -20,6 +19,31 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Product'
+        default:
+          description: Unexpected Error.
+    post:
+      tags:
+        - Products
+      summary: Returns a newly created product.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        400:
+          description: Wrong product format.
+        500:
+          description: Error creating product.
         default:
           description: Unexpected Error.
 
@@ -46,27 +70,6 @@ paths:
           description: Not Found.
         default:
           description: Unexpected Error.
-
-/products:
-  post:
-    tags:
-      - Products
-    summary: Returns a newly created product.
-    responses:
-      200:
-        description: OK
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/Product'
-      400:
-        description: Wrong product format.
-      500:
-        description: Error creating product.
-      default:
-        description: Unexpected Error.
 
 components:
   schemas:
