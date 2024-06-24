@@ -30,7 +30,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Product'
+              $ref: '#/components/schemas/CreateProduct'
       responses:
         200:
           description: OK
@@ -78,6 +78,19 @@ components:
       properties:
         id:
           type: string
+        name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+        count:
+          type: integer
+    CreateProduct:
+      type: object
+      properties:
         name:
           type: string
         title:

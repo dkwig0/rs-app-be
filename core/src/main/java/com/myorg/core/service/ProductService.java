@@ -5,10 +5,7 @@ import com.myorg.core.entity.Product;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Aliaksei Tsvirko
@@ -46,10 +43,12 @@ public class ProductService {
     public Product createProduct(Product product) {
         validateProduct(product);
 
+        String productId = String.valueOf(UUID.randomUUID());
+
         String productTableName = System.getenv("PRODUCT_TABLE");
 
         Map<String, AttributeValue> productAttributes = new HashMap<>();
-        productAttributes.put("id", AttributeValue.builder().s(product.getId()).build());
+        productAttributes.put("id", AttributeValue.builder().s(productId).build());
         productAttributes.put("name", AttributeValue.builder().s(product.getName()).build());
         productAttributes.put("title", AttributeValue.builder().s(product.getTitle()).build());
         productAttributes.put("description", AttributeValue.builder().s(product.getDescription()).build());
@@ -65,7 +64,7 @@ public class ProductService {
         String stockTableName = System.getenv("STOCK_TABLE");
 
         Map<String, AttributeValue> stockAttributes = new HashMap<>();
-        stockAttributes.put("product_id", AttributeValue.builder().s(product.getId()).build());
+        stockAttributes.put("product_id", AttributeValue.builder().s(productId).build());
         stockAttributes.put("count", AttributeValue.builder().n(product.getCount().toString()).build());
 
         Put stockPut = Put.builder()

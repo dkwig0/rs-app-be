@@ -29,6 +29,7 @@ public class CdkStack extends Stack {
         Map<String, String> environment = new HashMap<>();
 
         Table productTable = new Table(this, "product", TableProps.builder()
+                .tableName("product")
                 .partitionKey(Attribute.builder()
                         .name("id")
                         .type(AttributeType.STRING)
@@ -39,6 +40,7 @@ public class CdkStack extends Stack {
         environment.put("PRODUCT_TABLE", productTable.getTableName());
 
         Table stockTable = new Table(this, "stock", TableProps.builder()
+                .tableName("stock")
                 .partitionKey(Attribute.builder()
                         .name("product_id")
                         .type(AttributeType.STRING)
