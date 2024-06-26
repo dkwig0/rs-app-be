@@ -1,5 +1,6 @@
 package com.myorg.core.service;
 
+import com.myorg.core.ValidationException;
 import com.myorg.core.converter.ProductScanItemConverter;
 import com.myorg.core.entity.Product;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -93,7 +94,7 @@ public class ProductService {
     }
 
     private void validateProduct(Product product) {
-        if (product.getCount() < 0) throw new RuntimeException("Stock cannot be less than 0.");
+        if (product.getCount() < 0) throw new ValidationException("Stock cannot be less than 0.");
     }
 
     public void setDynamoDbClient(DynamoDbClient dynamoDbClient) {
