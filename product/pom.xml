@@ -7,10 +7,10 @@
         <version>1.0</version>
     </parent>
 
-    <artifactId>lambdas</artifactId>
+    <artifactId>product</artifactId>
     <packaging>jar</packaging>
 
-    <name>lambdas</name>
+    <name>product</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -84,7 +84,7 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
-                    <finalName>lambdas</finalName>
+                    <finalName>product</finalName>
                     <outputDirectory>../assets</outputDirectory>
                 </configuration>
                 <executions>

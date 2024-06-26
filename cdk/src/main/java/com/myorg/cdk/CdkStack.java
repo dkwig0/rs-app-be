@@ -57,7 +57,7 @@ public class CdkStack extends Stack {
                 .memorySize(128)
                 .timeout(Duration.seconds(60))
                 .functionName("getProductList")
-                .code(Code.fromAsset("../assets/lambdas.jar"))
+                .code(Code.fromAsset("../assets/product.jar"))
                 .build();
         productTable.grantReadWriteData(productListFunction);
         stockTable.grantReadWriteData(productListFunction);
@@ -69,7 +69,7 @@ public class CdkStack extends Stack {
                 .memorySize(128)
                 .timeout(Duration.seconds(20))
                 .functionName("getProductById")
-                .code(Code.fromAsset("../assets/lambdas.jar"))
+                .code(Code.fromAsset("../assets/product.jar"))
                 .build();
         productTable.grantReadWriteData(productByIdFunction);
         stockTable.grantReadWriteData(productByIdFunction);
@@ -81,7 +81,7 @@ public class CdkStack extends Stack {
                 .memorySize(128)
                 .timeout(Duration.seconds(20))
                 .functionName("createProduct")
-                .code(Code.fromAsset("../assets/lambdas.jar"))
+                .code(Code.fromAsset("../assets/product.jar"))
                 .build();
         productTable.grantReadWriteData(productCreateFunction);
         stockTable.grantReadWriteData(productCreateFunction);

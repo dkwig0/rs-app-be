@@ -6,7 +6,6 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.myorg.core.ValidationException;
 import com.myorg.core.entity.Product;
 import com.myorg.core.service.ProductService;
 import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
@@ -39,7 +38,7 @@ public class ProductCreateLambda implements RequestHandler<APIGatewayProxyReques
                     .withHeaders(HEADERS)
                     .withStatusCode(200)
                     .withBody(gson.toJson(product, Product.class));
-        } catch (ValidationException | TransactionCanceledException | JsonSyntaxException e) {
+        } catch (TransactionCanceledException | JsonSyntaxException e) {
             context.getLogger().log("ERROR: " + e.getMessage());
             return new APIGatewayProxyResponseEvent()
                     .withHeaders(HEADERS.entrySet().stream()
