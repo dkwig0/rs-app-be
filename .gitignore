@@ -5,6 +5,7 @@ target
 .idea
 .settings
 .vscode
+*.jar
 *.iml
 
 # CDK asset staging directory

@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>core</module>
-        <module>lambdas</module>
+        <module>product</module>
         <module>cdk</module>
     </modules>
 </project>
