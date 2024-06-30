@@ -1,4 +1,4 @@
-package com.myorg.core;
+package com.myorg.core.exception;
 
 /**
  * @author Aliaksei Tsvirko

@@ -5,12 +5,13 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
+import com.myorg.core.entity.ErrorResponse;
 import com.myorg.core.entity.Product;
 import com.myorg.core.service.ProductService;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
+import static com.myorg.core.Context.GSON;
 import static com.myorg.core.Context.PRODUCT_SERVICE;
 
 /**
@@ -22,7 +23,7 @@ public class ProductByIdLambda implements RequestHandler<APIGatewayProxyRequestE
             "Access-Control-Allow-Methods", "GET",
             "Content-Type", "application/json");
     private ProductService productService = PRODUCT_SERVICE;
-    private final Gson gson = new Gson();
+    private Gson gson = GSON;
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
@@ -35,11 +36,9 @@ public class ProductByIdLambda implements RequestHandler<APIGatewayProxyRequestE
 
             if (product == null) {
                 return new APIGatewayProxyResponseEvent()
-                        .withHeaders(HEADERS.entrySet().stream()
-                                .filter(header -> !header.getKey().equals("Content-Type"))
-                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+                        .withHeaders(HEADERS)
                         .withStatusCode(404)
-                        .withBody("No product found for id %s.".formatted(productId));
+                        .withBody(gson.toJson(new ErrorResponse("No product found for id %s.".formatted(productId))));
             }
 
             return new APIGatewayProxyResponseEvent()
@@ -48,15 +47,17 @@ public class ProductByIdLambda implements RequestHandler<APIGatewayProxyRequestE
                     .withBody(gson.toJson(product));
         } catch (Exception e) {
             return new APIGatewayProxyResponseEvent()
-                    .withHeaders(HEADERS.entrySet().stream()
-                            .filter(header -> !header.getKey().equals("Content-Type"))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+                    .withHeaders(HEADERS)
                     .withStatusCode(500)
-                    .withBody("Unexpected error.");
+                    .withBody(gson.toJson(new ErrorResponse("Unexpected error.")));
         }
     }
 
     public void setProductService(ProductService productService) {
         this.productService = productService;
+    }
+
+    public void setGson(Gson gson) {
+        this.gson = gson;
     }
 }

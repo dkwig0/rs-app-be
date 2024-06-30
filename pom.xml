@@ -11,5 +11,6 @@
         <module>core</module>
         <module>product</module>
         <module>cdk</module>
+        <module>import</module>
     </modules>
 </project>
