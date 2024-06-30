@@ -1,5 +1,6 @@
 package com.myorg.core;
 
+import com.google.gson.Gson;
 import com.myorg.core.converter.ProductScanItemConverter;
 import com.myorg.core.converter.StockScanItemConverter;
 import com.myorg.core.service.ProductService;
@@ -34,6 +35,8 @@ public class Context {
 
         PRODUCT_SCAN_ITEM_CONVERTER = productScanItemConverter;
         STOCK_SCAN_ITEM_CONVERTER = stockScanItemConverter;
+
+        GSON = new Gson();
     }
 
     public static DynamoDbClient DYNAMO_DB_CLIENT;
@@ -42,5 +45,7 @@ public class Context {
     public static ProductScanItemConverter PRODUCT_SCAN_ITEM_CONVERTER;
 
     public static StockScanItemConverter STOCK_SCAN_ITEM_CONVERTER;
+
+    public static Gson GSON;
 
 }

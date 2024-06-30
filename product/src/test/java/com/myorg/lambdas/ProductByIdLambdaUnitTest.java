@@ -51,6 +51,7 @@ public class ProductByIdLambdaUnitTest {
                 new Product("1", "p1", "p1", "p1", 1));
 
         when(context.getLogger()).thenReturn(logger);
+        productByIdLambda.setGson(gson);
     }
 
     @Test
@@ -63,6 +64,8 @@ public class ProductByIdLambdaUnitTest {
         Assert.assertEquals("p1", product.getName());
         Assert.assertEquals("p1", product.getTitle());
         Assert.assertEquals(1, product.getPrice().intValue());
+
+        productByIdLambda.setGson(gson);
     }
 
     @Test

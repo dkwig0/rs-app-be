@@ -12,6 +12,8 @@ import software.amazon.awscdk.services.dynamodb.*;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.s3.*;
+import software.amazon.awscdk.services.s3.notifications.LambdaDestination;
 import software.constructs.Construct;
 
 import java.util.HashMap;
@@ -25,8 +27,22 @@ public class CdkStack extends Stack {
 
     public CdkStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
-
         Map<String, String> environment = new HashMap<>();
+
+        Bucket importBucket = new Bucket(this, "import-bucket", BucketProps.builder()
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .versioned(true)
+                .cors(List.of(
+                        CorsRule.builder()
+                                .id("allow-all")
+                                .allowedMethods(List.of(HttpMethods.PUT))
+                                .allowedHeaders(List.of("*"))
+                                .allowedOrigins(List.of("https://d1rh1cdtj16wwn.cloudfront.net"))
+                                .build())
+                )
+                .autoDeleteObjects(true)
+                .build());
+        environment.put("IMPORT_BUCKET", importBucket.getBucketName());
 
         Table productTable = new Table(this, "product", TableProps.builder()
                 .tableName("product")
@@ -86,6 +102,34 @@ public class CdkStack extends Stack {
         productTable.grantReadWriteData(productCreateFunction);
         stockTable.grantReadWriteData(productCreateFunction);
 
+        Function importProductsFileFunction = Function.Builder.create(this, "importProductsFile")
+                .environment(environment)
+                .runtime(Runtime.JAVA_17)
+                .handler("com.myorg.lambdas.ImportProductsFileLambda")
+                .memorySize(128)
+                .timeout(Duration.seconds(20))
+                .functionName("importProductsFile")
+                .code(Code.fromAsset("../assets/import.jar"))
+                .build();
+        importBucket.grantReadWrite(importProductsFileFunction);
+
+        Function importFileParserFunction = Function.Builder.create(this, "importFileParser")
+                .environment(environment)
+                .runtime(Runtime.JAVA_17)
+                .handler("com.myorg.lambdas.ImportFileParserLambda")
+                .memorySize(128)
+                .timeout(Duration.seconds(20))
+                .functionName("importFileParser")
+                .code(Code.fromAsset("../assets/import.jar"))
+                .build();
+        importBucket.grantReadWrite(importFileParserFunction);
+
+        importBucket.addEventNotification(EventType.OBJECT_CREATED,
+                new LambdaDestination(importFileParserFunction),
+                NotificationKeyFilter.builder()
+                        .prefix("uploaded/")
+                        .build());
+
         HttpApi httpApi = HttpApi.Builder.create(this, "product-service")
                 .apiName("product service")
                 .build();
@@ -106,6 +150,12 @@ public class CdkStack extends Stack {
                 .path("/products")
                 .methods(List.of(HttpMethod.POST))
                 .integration(new HttpLambdaIntegration("productCreate", productCreateFunction))
+                .build());
+
+        httpApi.addRoutes(AddRoutesOptions.builder()
+                .path("/import")
+                .methods(List.of(HttpMethod.GET))
+                .integration(new HttpLambdaIntegration("importProductsFile", importProductsFileFunction))
                 .build());
     }
 }

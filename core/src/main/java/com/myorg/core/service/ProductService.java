@@ -1,6 +1,6 @@
 package com.myorg.core.service;
 
-import com.myorg.core.ValidationException;
+import com.myorg.core.exception.ValidationException;
 import com.myorg.core.converter.ProductScanItemConverter;
 import com.myorg.core.entity.Product;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;

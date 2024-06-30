@@ -49,6 +49,8 @@ public class ProductListLambdaUnitTest {
 
         when(productService.getAllProducts()).thenReturn(Mocks.MOCK_PRODUCTS);
         when(context.getLogger()).thenReturn(logger);
+        productListLambda.setGson(gson);
+
     }
 
     @Test
