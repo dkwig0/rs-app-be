@@ -4,6 +4,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification;
+import com.google.gson.Gson;
+import com.myorg.core.converter.ProductCSVConverter;
+import com.myorg.core.entity.Product;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +22,7 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -47,6 +51,15 @@ public class ImportFileParserLambdaTest {
     private S3Client s3Client;
 
     @Mock
+    private SqsClient sqsClient;
+
+    @Mock
+    private Gson gson;
+
+    @Mock
+    private ProductCSVConverter productCSVConverter;
+
+    @Mock
     private S3EventNotification.S3EventNotificationRecord notificationRecord;
 
     @Mock
@@ -63,6 +76,9 @@ public class ImportFileParserLambdaTest {
     @Mock
     private GetObjectResponse getObjectResponse;
 
+    @Mock
+    private Product product;
+
     @Before
     public void setUp() throws Exception {
         when(context.getLogger()).thenReturn(lambdaLogger);
@@ -72,7 +88,7 @@ public class ImportFileParserLambdaTest {
         when(bucket.getName()).thenReturn("bucket");
         when(s3Entity.getObject()).thenReturn(object);
         when(object.getKey()).thenReturn("object");
-
+        when(productCSVConverter.convert(Mockito.any())).thenReturn(product);
         responseInputStream = new ResponseInputStream<>(
                 getObjectResponse, new ByteArrayInputStream("123,123,123,123".getBytes()));
 
