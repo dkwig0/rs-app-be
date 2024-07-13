@@ -12,8 +12,18 @@ import software.amazon.awscdk.services.dynamodb.*;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSourceProps;
 import software.amazon.awscdk.services.s3.*;
 import software.amazon.awscdk.services.s3.notifications.LambdaDestination;
+import software.amazon.awscdk.services.sns.StringConditions;
+import software.amazon.awscdk.services.sns.SubscriptionFilter;
+import software.amazon.awscdk.services.sns.Topic;
+import software.amazon.awscdk.services.sns.TopicProps;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
+import software.amazon.awscdk.services.sns.subscriptions.EmailSubscriptionProps;
+import software.amazon.awscdk.services.sqs.Queue;
+import software.amazon.awscdk.services.sqs.QueueProps;
 import software.constructs.Construct;
 
 import java.util.HashMap;
@@ -28,6 +38,38 @@ public class CdkStack extends Stack {
     public CdkStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
         Map<String, String> environment = new HashMap<>();
+
+        Topic productCreateTopic = new Topic(this, "productCreateTopic", TopicProps.builder()
+                .displayName("Product Creation topic")
+                .build());
+        environment.put("PRODUCT_CREATE_TOPIC_ARN", productCreateTopic.getTopicArn());
+
+        productCreateTopic.addSubscription(new EmailSubscription("forsonggggg@gmail.com"));
+
+        productCreateTopic.addSubscription(new EmailSubscription(
+                "forsongggggg@gmail.com",
+                EmailSubscriptionProps.builder()
+                        .filterPolicy(Map.of("name", SubscriptionFilter.stringFilter(
+                                StringConditions.builder()
+                                        .matchPrefixes(List.of("TEST"))
+                                        .build())))
+                        .build()));
+
+        Queue catalogItemsQueue = new Queue(this, "catalogItemsQueue", QueueProps.builder()
+                .visibilityTimeout(Duration.minutes(5))
+                .retentionPeriod(Duration.minutes(2))
+                .receiveMessageWaitTime(Duration.seconds(10))
+                .removalPolicy(RemovalPolicy.DESTROY)
+                .build());
+        environment.put("CATALOG_ITEMS_QUEUE_URL", catalogItemsQueue.getQueueUrl());
+
+        SqsEventSource catalogItemsQueueEventSource = new SqsEventSource(
+                catalogItemsQueue,
+                SqsEventSourceProps.builder()
+                        .batchSize(5)
+                        .maxBatchingWindow(Duration.seconds(10))
+                        .build()
+        );
 
         Bucket importBucket = new Bucket(this, "import-bucket", BucketProps.builder()
                 .removalPolicy(RemovalPolicy.DESTROY)
@@ -123,6 +165,23 @@ public class CdkStack extends Stack {
                 .code(Code.fromAsset("../assets/import.jar"))
                 .build();
         importBucket.grantReadWrite(importFileParserFunction);
+        catalogItemsQueue.grantSendMessages(importFileParserFunction);
+
+        Function catalogBatchProcessFunction = Function.Builder.create(this, "catalogBatchProcessFunction")
+                .environment(environment)
+                .runtime(Runtime.JAVA_17)
+                .handler("com.myorg.lambdas.CatalogBatchProcessLambda")
+                .memorySize(128)
+                .timeout(Duration.seconds(20))
+                .functionName("catalogBatchProcessFunction")
+                .code(Code.fromAsset("../assets/product.jar"))
+                .build();
+        importBucket.grantReadWrite(catalogBatchProcessFunction);
+        productTable.grantReadWriteData(catalogBatchProcessFunction);
+        stockTable.grantReadWriteData(catalogBatchProcessFunction);
+        catalogBatchProcessFunction.addEventSource(catalogItemsQueueEventSource);
+        catalogItemsQueue.grantConsumeMessages(catalogBatchProcessFunction);
+        productCreateTopic.grantPublish(catalogBatchProcessFunction);
 
         importBucket.addEventNotification(EventType.OBJECT_CREATED,
                 new LambdaDestination(importFileParserFunction),
