@@ -1,13 +1,11 @@
 package com.myorg.cdk;
 
-import software.amazon.awscdk.Duration;
-import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.*;
+import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpLambdaAuthorizer;
+import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpLambdaAuthorizerProps;
+import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpLambdaResponseType;
 import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegration;
-import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
-import software.amazon.awscdk.services.apigatewayv2.HttpApi;
-import software.amazon.awscdk.services.apigatewayv2.HttpMethod;
+import software.amazon.awscdk.services.apigatewayv2.*;
 import software.amazon.awscdk.services.dynamodb.*;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
@@ -31,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 public class CdkStack extends Stack {
+
+    public static final String ADMIN_LOGIN = "dkwig0";
+
     public CdkStack(final Construct scope, final String id) {
         this(scope, id, null);
     }
@@ -183,6 +184,21 @@ public class CdkStack extends Stack {
         catalogItemsQueue.grantConsumeMessages(catalogBatchProcessFunction);
         productCreateTopic.grantPublish(catalogBatchProcessFunction);
 
+        Function basicAuthorizerFunction = Function.Builder.create(this, "basicAuthorizer")
+                .environment(Map.of(ADMIN_LOGIN, System.getenv(ADMIN_LOGIN)))
+                .runtime(Runtime.JAVA_17)
+                .handler("com.myorg.lambdas.BasicAuthorizerLambda")
+                .memorySize(128)
+                .timeout(Duration.seconds(20))
+                .functionName("basicAuthorizer")
+                .code(Code.fromAsset("../assets/authorization.jar"))
+                .build();
+
+        HttpLambdaAuthorizer authorizer = new HttpLambdaAuthorizer("authorizer", basicAuthorizerFunction,
+                HttpLambdaAuthorizerProps.builder()
+                        .responseTypes(List.of(HttpLambdaResponseType.IAM))
+                        .build());
+
         importBucket.addEventNotification(EventType.OBJECT_CREATED,
                 new LambdaDestination(importFileParserFunction),
                 NotificationKeyFilter.builder()
@@ -190,6 +206,12 @@ public class CdkStack extends Stack {
                         .build());
 
         HttpApi httpApi = HttpApi.Builder.create(this, "product-service")
+                .corsPreflight(CorsPreflightOptions.builder()
+                        .allowMethods(List.of(CorsHttpMethod.ANY))
+                        .allowHeaders(List.of("*"))
+                        .exposeHeaders(List.of("*"))
+                        .allowOrigins(List.of("https://d1rh1cdtj16wwn.cloudfront.net"))
+                        .build())
                 .apiName("product service")
                 .build();
 
@@ -214,6 +236,7 @@ public class CdkStack extends Stack {
         httpApi.addRoutes(AddRoutesOptions.builder()
                 .path("/import")
                 .methods(List.of(HttpMethod.GET))
+                .authorizer(authorizer)
                 .integration(new HttpLambdaIntegration("importProductsFile", importProductsFileFunction))
                 .build());
     }
