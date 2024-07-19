@@ -12,5 +12,6 @@
         <module>product</module>
         <module>cdk</module>
         <module>import</module>
+        <module>authorization-service</module>
     </modules>
 </project>
